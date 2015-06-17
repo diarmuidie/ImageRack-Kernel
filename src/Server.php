@@ -91,7 +91,12 @@ class Server
                 $file->readStream(),
                 $this->container['imageManager']
             );
-            $image = $image->process($this->req->getTemplate());
+
+            // Get the template object
+            $template = $this->templates[$this->req->getTemplate()]();
+
+            // Process the image
+            $image = $image->process($template);
 
             // Send the processed image in the response
             $this->res->setContentType($image->mime);
@@ -120,7 +125,7 @@ class Server
         }
 
         // Is the template a valid template
-        if (!in_array($this->req->getTemplate(), $this->templates)) {
+        if (!array_key_exists($this->req->getTemplate(), $this->templates)) {
             return false;
         }
         return true;

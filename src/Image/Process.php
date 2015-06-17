@@ -40,17 +40,12 @@ class Process
      * @param  String $template          The template to run
      * @return Intervention\Image\Image  The processed image
      */
-    public function process($template)
+    public function process(\Diarmuidie\ImageRack\Image\TemplateInterface $template)
     {
         // Create a new intervention image object
         $image = $this->imageManager->make($this->image);
 
-        // Create a tempalte object
-        $templateName = "\Templates\\" . ucfirst($template);
-
-        $templateHandler = new $templateName();
-
-        $image = $templateHandler->process($image);
+        $image = $template->process($image);
         $image = $image->encode();
 
         return $image;
