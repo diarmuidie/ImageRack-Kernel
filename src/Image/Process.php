@@ -29,7 +29,7 @@ class Process
      *
      * @param resource $image The image resource
      */
-    public function __construct($image, Intervention\Image\ImageManager $imageManager)
+    public function __construct($image, \Intervention\Image\ImageManager $imageManager)
     {
         $this->image = $image;
         $this->imageManager = $imageManager;
