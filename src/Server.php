@@ -99,12 +99,19 @@ class Server
             $image = $image->process($template);
 
             // Send the processed image in the response
+            $this->res->setBody($image->encoded);
+
+            // Manually set the headers
             $this->res->setContentType($image->mime);
-            $this->res->setBody($image);
+            $this->res->setContentLength(strlen($image->encoded));
+
+            // Send the response
             $this->res->send();
 
             // Write the processed image to the cache
-            $cache->write($cachePath, $image);
+            $cache->write($cachePath, $image->encoded);
+
+            return $this->res;
         }
 
         // Finally return a not found response
@@ -130,4 +137,5 @@ class Server
         }
         return true;
     }
+
 }
