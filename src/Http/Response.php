@@ -2,49 +2,44 @@
 
 namespace Diarmuidie\ImageRack\Http;
 
-use League\Flysystem\File;
+use \League\Flysystem\File;
 
 class Response
 {
     private $body;
 
-    /**
-     * Respond with a 404 not found header
-     *
-     * @return null
-     */
-    public function notFound()
-    {
-        $this->setStatusCode(404);
-    }
+    private $headers = array();
 
-    /**
-     * Helper function to stram a filesystem file object
-     * @param  File   $file [description]
-     * @return [type]       [description]
-     */
-    public function sendFile(File $file)
-    {
-        $this->setContentType($file->getMimetype());
-        $this->setContentLength($file->getSize());
-        $this->setLastModified($file->getTimestamp());
-
-        $this->stream($file->readStream());
-    }
+    private $status;
 
     public function setBody($body)
     {
         $this->body = $body;
     }
 
+    public function getBody()
+    {
+        return $this->body;
+    }
+
     public function setHeader($header)
     {
-        header($header);
+        $this->headers[] = $header;
+    }
+
+    public function getHeaders()
+    {
+        return $this->headers;
     }
 
     public function setStatusCode($code)
     {
-        http_response_code($code);
+        $this->status = $code;
+    }
+
+    public function getStatusCode()
+    {
+        return $this->status;
     }
 
     public function setContentType($contentType)
@@ -57,25 +52,19 @@ class Response
         $this->setHeader('Content-Length: ' . $contentLength);
     }
 
-    public function setLastModified($lastModified)
+    public function setLastModified(\Datetime $lastModified)
     {
-        $dt = new \DateTime();
-        $dt->setTimestamp($lastModified);
-        $this->setHeader('Last-Modified: ' . $dt->format('D, d M Y H:i:s \G\M\T'));
+        $this->setHeader('Last-Modified: ' . $lastModified->format('D, d M Y H:i:s \G\M\T'));
     }
 
-    /**
-     * Get the ob cache size
-     *
-     * @return integer The size in bytes of the ob cache
-     */
-    private function obSize()
+    public function sendHeaders()
     {
-        $bufferLength = ini_get('output_buffering');
-        if ($bufferLength > 0) {
-            return $bufferLength;
-        };
-        return 4096;
+        foreach ($this->headers as $header) {
+            header($header);
+        }
+        if (is_int($this->status)) {
+            http_response_code($this->status);
+        }
     }
 
     /**
@@ -86,13 +75,8 @@ class Response
      */
     public function stream($stream)
     {
-        $obLength = $this->obSize();
-        ob_start();
-        while (!feof($stream)) {
-            echo stream_get_contents($stream, $obLength);
-            ob_flush();
-            flush();
-        }
+        $this->sendHeaders();
+        fpassthru($stream);
     }
 
     /**
@@ -102,6 +86,7 @@ class Response
      */
     public function send()
     {
+        $this->sendHeaders();
         echo $this->body;
     }
 }

@@ -2,10 +2,9 @@
 
 namespace Diarmuidie\ImageRack\Image;
 
-use League\Flysystem\File;
-use Diarmuidie\ImageRack\Image\TemplateInterface;
-use Templates;
-use Intervention\Image\ImageManagerStatic as Image;
+use \Diarmuidie\ImageRack\Image\TemplateInterface;
+use \League\Flysystem\File;
+use \Intervention\Image\ImageManager;
 
 /**
  * Object to process an image
@@ -29,7 +28,7 @@ class Process
      *
      * @param resource $image The image resource
      */
-    public function __construct($image, \Intervention\Image\ImageManager $imageManager)
+    public function __construct($image, ImageManager $imageManager)
     {
         $this->image = $image;
         $this->imageManager = $imageManager;
@@ -40,7 +39,7 @@ class Process
      * @param  String $template          The template to run
      * @return Intervention\Image\Image  The processed image
      */
-    public function process(\Diarmuidie\ImageRack\Image\TemplateInterface $template)
+    public function process(TemplateInterface $template)
     {
         // Create a new intervention image object
         $image = $this->imageManager->make($this->image);

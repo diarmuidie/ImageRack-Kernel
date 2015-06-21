@@ -2,6 +2,8 @@
 
 namespace Diarmuidie\ImageRack\Image;
 
+use \Intervention\Image\Image;
+
 interface TemplateInterface
 {
     /**
@@ -11,5 +13,5 @@ interface TemplateInterface
      * @param  InterventionImageImage $image The input image
      * @return InterventionImageImage        The processed image
      */
-    public function process(\Intervention\Image\Image $image);
+    public function process(Image $image);
 }

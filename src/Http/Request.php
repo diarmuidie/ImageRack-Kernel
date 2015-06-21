@@ -23,14 +23,6 @@ class Request
         }
     }
 
-    public function validPath()
-    {
-        if (empty($this->getTemplate()) or empty($this->getPath())) {
-            return false;
-        }
-        return true;
-    }
-
     public function getTemplate()
     {
         return $this->template;

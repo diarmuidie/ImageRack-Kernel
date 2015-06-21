@@ -2,8 +2,11 @@
 
 namespace Diarmuidie\ImageRack;
 
-use Pimple\Container as Container;
-use Dflydev\Canal\Analyzer\Analyzer;
+use \Pimple\Container;
+use \League\Flysystem\Handler;
+use \Intervention\Image\ImageManager;
+use \Intervention\Image\Image;
+use \Diarmuidie\ImageRack\Image\TemplateInterface;
 
 /**
  *
@@ -27,6 +30,12 @@ class Server
      * @var Diarmuidie\Http\Response
      */
     private $res;
+
+    /**
+     * The response object
+     * @var
+     */
+    private $notFound;
 
     /**
      * Array of valid template names
@@ -65,7 +74,7 @@ class Server
     {
         // Send a not found response if the request is not valid
         if (!$this->validRequest()) {
-            $this->res->notFound();
+            $this->notFound();
             return $this->res;
         }
 
@@ -75,7 +84,7 @@ class Server
         // First try and load the image from the cache
         if ($cache->has($cachePath)) {
             $file = $cache->get($cachePath);
-            $this->res->sendFile($file);
+            $this->sendCacheImage($file);
             return $this->res;
         }
 
@@ -86,27 +95,17 @@ class Server
         if ($source->has($sourcePath)) {
             $file = $source->get($sourcePath);
 
-            // Process the image using the template
-            $image = new \Diarmuidie\ImageRack\Image\Process(
-                $file->readStream(),
-                $this->container['imageManager']
-            );
-
             // Get the template object
             $template = $this->templates[$this->req->getTemplate()]();
 
             // Process the image
-            $image = $image->process($template);
+            $image = $this->processImage(
+                $file,
+                $this->container['imageManager'],
+                $template
+            );
 
-            // Send the processed image in the response
-            $this->res->setBody($image->encoded);
-
-            // Manually set the headers
-            $this->res->setContentType($image->mime);
-            $this->res->setContentLength(strlen($image->encoded));
-
-            // Send the response
-            $this->res->send();
+            $this->sendProcessedImage($image);
 
             // Write the processed image to the cache
             $cache->write($cachePath, $image->encoded);
@@ -115,8 +114,61 @@ class Server
         }
 
         // Finally return a not found response
-        $this->res->notFound();
+        $this->notFound();
         return $this->res;
+    }
+
+    private function sendCacheImage(Handler $file)
+    {
+        // Set the headers
+        $this->res->setContentType($file->getMimetype());
+        $this->res->setContentLength($file->getSize());
+        $lastModified = new \DateTime();
+        $lastModified->setTimestamp($file->getTimestamp());
+        $this->res->setLastModified($lastModified);
+
+        // Stream the response
+        $this->res->stream($file->readStream());
+    }
+
+    private function processImage(Handler $file, ImageManager $imageManager, TemplateInterface $template)
+    {
+        // Process the image using the template
+        $image = new \Diarmuidie\ImageRack\Image\Process(
+            $file->readStream(),
+            $imageManager
+        );
+
+        // Process the image
+        return $image->process($template);
+    }
+
+    private function sendProcessedImage(Image $image)
+    {
+        // Send the processed image in the response
+        $this->res->setBody($image->encoded);
+
+        // Manually set the headers
+        $this->res->setContentType($image->mime);
+        $this->res->setContentLength(strlen($image->encoded));
+        $lastModified = new \DateTime(); // now
+        $this->res->setLastModified($lastModified);
+
+        // Send the response
+        $this->res->send();
+    }
+
+    public function notFound($callable = null)
+    {
+        if (is_callable($callable)) {
+            $this->notFound = $callable;
+        } else {
+            $this->res->setStatusCode(404);
+            if (is_callable($this->notFound)) {
+                call_user_func($this->notFound, $this->res);
+            }
+            $this->res->send();
+        }
     }
 
     /**
