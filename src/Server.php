@@ -65,7 +65,7 @@ class Server
     {
         // Send a not found response if the request is not valid
         if (!$this->validRequest()) {
-            $this->res->setNotFoundHeader();
+            $this->res->notFound();
             return $this->res;
         }
 
@@ -115,7 +115,7 @@ class Server
         }
 
         // Finally return a not found response
-        $this->res->setNotFoundHeader();
+        $this->res->notFound();
         return $this->res;
     }
 

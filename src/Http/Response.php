@@ -8,21 +8,21 @@ class Response
 {
     private $body;
 
-    public function setHeader($header)
-    {
-        header($header);
-    }
-
-    public function setStatusCode($code)
-    {
-        http_response_code($code);
-    }
-
-    public function setNotFoundHeader()
+    /**
+     * Respond with a 404 not found header
+     *
+     * @return null
+     */
+    public function notFound()
     {
         $this->setStatusCode(404);
     }
 
+    /**
+     * Helper function to stram a filesystem file object
+     * @param  File   $file [description]
+     * @return [type]       [description]
+     */
     public function sendFile(File $file)
     {
         $this->setContentType($file->getMimetype());
@@ -35,6 +35,16 @@ class Response
     public function setBody($body)
     {
         $this->body = $body;
+    }
+
+    public function setHeader($header)
+    {
+        header($header);
+    }
+
+    public function setStatusCode($code)
+    {
+        http_response_code($code);
     }
 
     public function setContentType($contentType)
@@ -54,6 +64,11 @@ class Response
         $this->setHeader('Last-Modified: ' . $dt->format('D, d M Y H:i:s \G\M\T'));
     }
 
+    /**
+     * Get the ob cache size
+     *
+     * @return integer The size in bytes of the ob cache
+     */
     private function obSize()
     {
         $bufferLength = ini_get('output_buffering');
@@ -63,6 +78,12 @@ class Response
         return 4096;
     }
 
+    /**
+     * Stream a streamable resource to the browser
+     *
+     * @param  resource $stream The streamable resource
+     * @return null
+     */
     public function stream($stream)
     {
         $obLength = $this->obSize();
@@ -74,6 +95,11 @@ class Response
         }
     }
 
+    /**
+     * Send the body to the browser
+     *
+     * @return null
+     */
     public function send()
     {
         echo $this->body;
