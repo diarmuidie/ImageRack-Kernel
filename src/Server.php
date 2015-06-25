@@ -4,32 +4,24 @@ namespace Diarmuidie\ImageRack;
 
 use \Pimple\Container;
 use \League\Flysystem\Handler;
+use \League\Flysystem\FilesystemInterface;
 use \Intervention\Image\ImageManager;
 use \Intervention\Image\Image;
 use \Diarmuidie\ImageRack\Image\TemplateInterface;
+use \Symfony\Component\HttpFoundation\Request;
+use \Symfony\Component\HttpFoundation\Response;
 
 /**
  *
  */
 class Server
 {
-    /**
-     * DI Container
-     * @var Pimple\Container
-     */
-    private $container;
 
-    /**
-     * The request object
-     * @var Diarmuidie\Http\Request
-     */
-    private $req;
 
-    /**
-     * The response object
-     * @var Diarmuidie\Http\Response
-     */
-    private $res;
+    private $source;
+    private $cache;
+    private $imageManager;
+    private $request;
 
     /**
      * The response object
@@ -43,16 +35,30 @@ class Server
      */
     private $templates = array();
 
+    private $template;
+    private $path;
+
     /**
      * Pass in the DI container and set the request/response objects
      *
      * @param Container $container The DI Container
      */
-    public function __construct(Container $container)
-    {
-        $this->container = $container;
-        $this->req = $this->container['request'];
-        $this->res = $this->container['response'];
+    public function __construct(
+        FilesystemInterface $source,
+        FilesystemInterface $cache,
+        ImageManager $imageManager,
+        Request $request = null
+    ) {
+        $this->source = $source;
+        $this->cache = $cache;
+        $this->imageManager = $imageManager;
+
+        if (!$request) {
+            $request = Request::createFromGlobals();
+        }
+        $this->request = $request;
+
+        $this->parsePath($request->getPathInfo());
     }
 
     /**
@@ -60,9 +66,20 @@ class Server
      *
      * @param Array $templates
      */
-    public function setTemplates(Array $templates)
+    public function setTemplate($name, callable $templateCallback)
     {
-        $this->templates = $templates;
+        $this->templates[$name] = $templateCallback;
+    }
+
+
+    /**
+     * Set an array of allowed template names
+     *
+     * @param Array $templates
+     */
+    public function getTemplates()
+    {
+        return $this->templates;
     }
 
     /**
@@ -72,27 +89,29 @@ class Server
      */
     public function run()
     {
+
+
+
         // Send a not found response if the request is not valid
         if (!$this->validRequest()) {
+            $this->response = new Response();
             $this->notFound();
-            return $this->res;
+            return $response;
         }
 
-        $cache = $this->container['cache'];
-        $cachePath = $this->req->getTemplate() . '/' . $this->req->getPath();
+        $cachePath = $request->getTemplate() . '/' . $request->getPath();
 
         // First try and load the image from the cache
-        if ($cache->has($cachePath)) {
-            $file = $cache->get($cachePath);
+        if ($this->cache->has($cachePath)) {
+            $file = $this->cache->get($cachePath);
             $this->sendCacheImage($file);
-            return $this->res;
+            return $response;
         }
 
-        $source = $this->container['source'];
         $sourcePath = $this->req->getPath();
 
         // Secondly try load the source image
-        if ($source->has($sourcePath)) {
+        if ($this->source->has($sourcePath)) {
             $file = $source->get($sourcePath);
 
             // Get the template object
@@ -110,22 +129,21 @@ class Server
             // Write the processed image to the cache
             $cache->write($cachePath, $image->encoded);
 
-            return $this->res;
+            return $response;
         }
 
         // Finally return a not found response
-        $this->notFound();
-        return $this->res;
+        return $response->setStatusCode(Response::HTTP_NOT_FOUND);
     }
 
-    private function sendCacheImage(Handler $file)
+    private function sendCacheImage(Handler $file, $response)
     {
         // Set the headers
-        $this->res->setContentType($file->getMimetype());
-        $this->res->setContentLength($file->getSize());
+        $response->headers->set('Content Type', $file->getMimetype());
+        $response->headers->set('Content Length', $file->getSize());
         $lastModified = new \DateTime();
         $lastModified->setTimestamp($file->getTimestamp());
-        $this->res->setLastModified($lastModified);
+        $response->setLastModified($lastModified);
 
         // Stream the response
         $this->res->stream($file->readStream());
@@ -160,14 +178,29 @@ class Server
 
     public function notFound($callable = null)
     {
+        // If a callable is provided then set the notFound callback
         if (is_callable($callable)) {
             $this->notFound = $callable;
-        } else {
-            $this->res->setStatusCode(404);
-            if (is_callable($this->notFound)) {
-                call_user_func($this->notFound, $this->res);
-            }
-            $this->res->send();
+            return true;
+        }
+
+        // Set the default not found response
+        $this->response->setContent('File not found');
+        $this->response->headers->set(array('content-type' => 'text/html'));
+        $this->response->setStatusCode(Response::HTTP_NOT_FOUND);
+
+        // Execute the user defined notFound callback
+        if (is_callable($this->notFound)) {
+            $this->response = call_user_func($this->notFound, $this->response);
+        }
+    }
+
+    private function parsePath($path)
+    {
+        // strip out any query params
+        if (preg_match('/^\/?(.*?)\/(.*)/', $path, $matches)) {
+            $this->template = $matches[1];
+            $this->path = $matches[2];
         }
     }
 
@@ -179,15 +212,14 @@ class Server
     private function validRequest()
     {
         // Is a path and template set
-        if (empty($this->req->getTemplate()) or empty($this->req->getPath())) {
+        if (empty($this->template) or empty($this->path)) {
             return false;
         }
 
         // Is the template a valid template
-        if (!array_key_exists($this->req->getTemplate(), $this->templates)) {
+        if (!array_key_exists($this->template, $this->templates)) {
             return false;
         }
         return true;
     }
-
 }
