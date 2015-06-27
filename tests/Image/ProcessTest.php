@@ -14,11 +14,7 @@ class ProcessTest extends \PHPUnit_Framework_TestCase
 
     public function testProcessCallesTemplate()
     {
-        $image = Mockery::mock('\Intervention\Image\Image')
-            ->shouldReceive('encode')
-            ->andReturn(Mockery::self())
-            ->once()
-            ->mock();
+        $image = Mockery::mock('\Intervention\Image\Image');
         $imageManager = Mockery::mock('\Intervention\Image\ImageManager')
             ->shouldReceive('make')
             ->andReturn($image)

@@ -45,7 +45,6 @@ class Process
         $image = $this->imageManager->make($this->image);
 
         $image = $template->process($image);
-        $image = $image->encode();
 
         return $image;
     }

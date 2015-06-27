@@ -10,13 +10,13 @@ use \Intervention\Image\Image;
 use \Diarmuidie\ImageRack\Image\TemplateInterface;
 use \Symfony\Component\HttpFoundation\Request;
 use \Symfony\Component\HttpFoundation\Response;
+use \Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  *
  */
 class Server
 {
-
 
     private $source;
     private $cache;
@@ -85,68 +85,120 @@ class Server
     /**
      * Run the image Server
      *
-     * @return Diarmuidie\Http\Response The response object
+     * @return \Symfony\Component\HttpFoundation\Response The response object
      */
     public function run()
     {
-
-
 
         // Send a not found response if the request is not valid
         if (!$this->validRequest()) {
             $this->response = new Response();
             $this->notFound();
-            return $response;
+            return $this->response;
         }
-
-        $cachePath = $request->getTemplate() . '/' . $request->getPath();
 
         // First try and load the image from the cache
-        if ($this->cache->has($cachePath)) {
-            $file = $this->cache->get($cachePath);
-            $this->sendCacheImage($file);
-            return $response;
+        $cachePath = $this->getCachePath();
+        if ($this->serveFromCache($cachePath)) {
+            return $this->response;
         }
 
-        $sourcePath = $this->req->getPath();
-
         // Secondly try load the source image
-        if ($this->source->has($sourcePath)) {
-            $file = $source->get($sourcePath);
+        $sourcePath = $this->getSourcePath();
+        if ($this->serveFromSource($sourcePath)) {
+            return $this->response;
+        }
+
+        // Finally default to returning a not found response
+        $this->response = new Response();
+        $this->notFound();
+        return $this->response;
+    }
+
+    private function serveFromCache($path)
+    {
+        //try and load the image from the cache
+        if ($this->cache->has($path)) {
+            $file = $this->cache->get($path);
+
+            $this->response = new StreamedResponse();
+
+            // Set the headers
+            $this->response->headers->set('Content-Type', $file->getMimetype());
+            $this->response->headers->set('Content-Length', $file->getSize());
+            $lastModified = new \DateTime();
+            $lastModified->setTimestamp($file->getTimestamp());
+            $this->response->setLastModified($lastModified);
+
+            $this->response->setCallback(function () use ($file) {
+                fpassthru($file->readStream());
+            });
+
+            return true;
+        }
+        return false;
+    }
+
+    private function serveFromSource($path)
+    {
+        //try and load the image from the source
+        if ($this->source->has($path)) {
+            $file = $this->source->get($path);
 
             // Get the template object
-            $template = $this->templates[$this->req->getTemplate()]();
+            $template = $this->templates[$this->template]();
 
             // Process the image
             $image = $this->processImage(
                 $file,
-                $this->container['imageManager'],
+                $this->imageManager,
                 $template
             );
 
-            $this->sendProcessedImage($image);
+            $this->response = new Response();
+
+            $this->response->headers->set('Content-Type', $image->mime);
+            $this->response->headers->set('Content-Length', strlen($image->encoded));
+            $lastModified = new \DateTime(); // now
+            $this->response->setLastModified($lastModified);
+
+            // Send the processed image in the response
+            $this->response->setContent($image->encoded);
 
             // Write the processed image to the cache
-            $cache->write($cachePath, $image->encoded);
+            $this->cache->write($cachePath, $image->encoded);
 
-            return $response;
+            return true;
         }
-
-        // Finally return a not found response
-        return $response->setStatusCode(Response::HTTP_NOT_FOUND);
+        return false;
     }
 
-    private function sendCacheImage(Handler $file, $response)
+    public function notFound($callable = null)
     {
-        // Set the headers
-        $response->headers->set('Content Type', $file->getMimetype());
-        $response->headers->set('Content Length', $file->getSize());
-        $lastModified = new \DateTime();
-        $lastModified->setTimestamp($file->getTimestamp());
-        $response->setLastModified($lastModified);
+        // If a callable is provided then set the notFound callback
+        if (is_callable($callable)) {
+            $this->notFound = $callable;
+            return true;
+        }
 
-        // Stream the response
-        $this->res->stream($file->readStream());
+        // Set the default not found response
+        $this->response->setContent('File not found');
+        $this->response->headers->set('content-type', 'text/html');
+        $this->response->setStatusCode(Response::HTTP_NOT_FOUND);
+
+        // Execute the user defined notFound callback
+        if (is_callable($this->notFound)) {
+            $this->response = call_user_func($this->notFound, $this->response);
+        }
+    }
+
+    public function send(Response $response = null)
+    {
+        if ($response) {
+            $this->response = $response;
+        }
+        $this->response->prepare($this->request);
+        $this->response->send();
     }
 
     private function processImage(Handler $file, ImageManager $imageManager, TemplateInterface $template)
@@ -161,38 +213,14 @@ class Server
         return $image->process($template);
     }
 
-    private function sendProcessedImage(Image $image)
+    private function getCachePath()
     {
-        // Send the processed image in the response
-        $this->res->setBody($image->encoded);
-
-        // Manually set the headers
-        $this->res->setContentType($image->mime);
-        $this->res->setContentLength(strlen($image->encoded));
-        $lastModified = new \DateTime(); // now
-        $this->res->setLastModified($lastModified);
-
-        // Send the response
-        $this->res->send();
+        return $this->template . '/' . $this->path;
     }
 
-    public function notFound($callable = null)
+    private function getSourcePath()
     {
-        // If a callable is provided then set the notFound callback
-        if (is_callable($callable)) {
-            $this->notFound = $callable;
-            return true;
-        }
-
-        // Set the default not found response
-        $this->response->setContent('File not found');
-        $this->response->headers->set(array('content-type' => 'text/html'));
-        $this->response->setStatusCode(Response::HTTP_NOT_FOUND);
-
-        // Execute the user defined notFound callback
-        if (is_callable($this->notFound)) {
-            $this->response = call_user_func($this->notFound, $this->response);
-        }
+        return $this->path;
     }
 
     private function parsePath($path)
