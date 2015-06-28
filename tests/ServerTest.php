@@ -65,6 +65,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @covers Diarmuidie\ImageRack\Server::setNotFound
      * @covers Diarmuidie\ImageRack\Server::notFound
      */
     public function testCallableNotFound()
@@ -72,7 +73,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server = new Server($this->source, $this->cache, $this->imageManager);
 
         // Setup our notFound callback to edit the response body
-        $server->notFound(function ($response) {
+        $server->setNotFound(function ($response) {
             return $response->setContent('Image not found.');
         });
 
@@ -98,24 +99,100 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @covers Diarmuidie\ImageRack\Server::run
+     * @covers Diarmuidie\ImageRack\Server::validRequest
      */
-    public function testSendNotFoundForBadURL()
+    public function testSendNotFoundForURLWithoutTemplate()
     {
+        /*
+         * Setup the mock objects
+         */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
         ->shouldReceive('getPathInfo')
         ->andReturn('invalidPath.png')
         ->once()
         ->mock();
 
+        /*
+         * Run the server
+         */
         $server = new Server($this->source, $this->cache, $this->imageManager, $request);
         $response = $server->run();
 
+        /*
+         * Test assertions
+         */
         $this->assertEquals(404, $response->getStatusCode());
     }
 
+    /**
+     * @covers Diarmuidie\ImageRack\Server::run
+     * @covers Diarmuidie\ImageRack\Server::validRequest
+     */
+    public function testSendNotFoundForURLWithInvalidTemplate()
+    {
+        /*
+         * Setup the mock objects
+         */
+        $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
+        ->shouldReceive('getPathInfo')
+        ->andReturn('template/image.png')
+        ->once()
+        ->mock();
+
+        /*
+         * Run the server
+         */
+        $server = new Server($this->source, $this->cache, $this->imageManager, $request);
+        $response = $server->run();
+
+        /*
+         * Test assertions
+         */
+        $this->assertEquals(404, $response->getStatusCode());
+    }
+
+    /**
+     * @covers Diarmuidie\ImageRack\Server::run
+     * @covers Diarmuidie\ImageRack\Server::serveFromCache
+     * @covers Diarmuidie\ImageRack\Server::serveFromSource
+     */
+    public function testSendNotFoundForValidURL()
+    {
+        /*
+         * Setup the mock objects
+         */
+        $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
+        ->shouldReceive('getPathInfo')
+        ->andReturn('template/image.png')
+        ->once()
+        ->mock();
+
+        $this->cache
+        ->shouldReceive('has')->with('template/image.png')->andReturn(false)->once();
+
+        $this->source
+        ->shouldReceive('has')->with('image.png')->andReturn(false)->once();
+
+        /*
+         * Run the server
+         */
+        $server = new Server($this->source, $this->cache, $this->imageManager, $request);
+        $server->setTemplate('template', function () {
+            // Empty callable for testing
+        });
+        $response = $server->run();
+
+        /*
+         * Test assertions
+         */
+        $this->assertEquals(404, $response->getStatusCode());
+    }
 
     public function testSendImageFromCache()
     {
+        /*
+         * Setup the mock objects
+         */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
         ->shouldReceive('getPathInfo')->andReturn('template/image.png') ->once()
         ->mock();
@@ -132,19 +209,75 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         ->shouldReceive('has')->with('template/image.png')->andReturn(true)->once()
         ->shouldReceive('get')->with('template/image.png')->andReturn($image)->once();
 
+        /*
+         * Run the server
+         */
         $server = new Server($this->source, $this->cache, $this->imageManager, $request);
-
         $server->setTemplate('template', function () {
-            //
+            // Empty callable for testing
         });
-
         $response = $server->run();
 
+        /*
+         * Test assertions
+         */
         $actualModified = new \DateTime();
         $actualModified->setTimestamp($modifiedTimestamp);
 
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals(1234, $response->headers->get('content-length'));
         $this->assertEquals($actualModified, $response->getLastModified());
+    }
+
+    public function testSendImageFromSource()
+    {
+        /*
+         * Setup the mock objects
+         */
+        $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
+        ->shouldReceive('getPathInfo')->andReturn('template/image.png') ->once()
+        ->mock();
+
+        $imageContent = str_repeat('.', 1234);
+        $image = Mockery::mock('\Intervention\Image\Image');
+        $image->mime = 'image/png';
+        $image->encoded = $imageContent;
+
+        $file = Mockery::mock('\League\Flysystem\Handler')
+        ->shouldReceive('readStream')->andReturn(Mockery::type('resource'))->once()
+        ->mock();
+
+        $template = Mockery::mock('\Diarmuidie\ImageRack\Image\TemplateInterface')
+        ->shouldReceive('process')->andReturn($image)->once()
+        ->mock();
+
+        $this->cache
+        ->shouldReceive('has')->with('template/image.png')->andReturn(false)->once()
+        ->shouldReceive('write')->once();
+
+        $this->source
+        ->shouldReceive('has')->with('image.png')->andReturn(true)->once()
+        ->shouldReceive('get')->with('image.png')->andReturn($file)->once();
+
+        $this->imageManager
+        ->shouldReceive('make')->andReturn($image)->once();
+
+        /*
+         * Run the server
+         */
+        $server = new Server($this->source, $this->cache, $this->imageManager, $request);
+        $server->setTemplate('template', function () use ($template) {
+            return $template;
+        });
+        $response = $server->run();
+
+        /*
+         * Test assertions
+         */
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals(1234, $response->headers->get('content-length'));
+        $this->assertEquals('image/png', $response->headers->get('content-type'));
+        $this->assertEquals($imageContent, $response->getContent());
+
     }
 }

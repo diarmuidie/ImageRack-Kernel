@@ -2,7 +2,6 @@
 
 namespace Diarmuidie\ImageRack;
 
-use \Pimple\Container;
 use \League\Flysystem\Handler;
 use \League\Flysystem\FilesystemInterface;
 use \Intervention\Image\ImageManager;
@@ -18,30 +17,56 @@ use \Symfony\Component\HttpFoundation\StreamedResponse;
 class Server
 {
 
+    /**
+     * @var \League\Flysystem\FilesystemInterface
+     */
     private $source;
+
+    /**
+     * @var \League\Flysystem\FilesystemInterface
+     */
     private $cache;
+
+    /**
+     * @var \Intervention\Image\ImageManager
+     */
     private $imageManager;
+
+    /**
+     * @var \Symfony\Component\HttpFoundation\Request
+     */
     private $request;
 
     /**
-     * The response object
-     * @var
+     * @var callable
      */
     private $notFound;
 
     /**
-     * Array of valid template names
+     * Array of valid templates [name => callable]
      * @var array
      */
     private $templates = array();
 
+    /**
+     * Current request template
+     * @var string
+     */
     private $template;
+
+    /**
+     * Current request path
+     * @var string
+     */
     private $path;
 
     /**
-     * Pass in the DI container and set the request/response objects
+     * Bootstrap the server dependencies
      *
-     * @param Container $container The DI Container
+     * @param FilesystemInterface $source       The source image location
+     * @param FilesystemInterface $cache        The cache image location
+     * @param ImageManager        $imageManager The image manipulatpion object
+     * @param Request             $request      Optional overwride request object
      */
     public function __construct(
         FilesystemInterface $source,
@@ -53,16 +78,18 @@ class Server
         $this->cache = $cache;
         $this->imageManager = $imageManager;
 
+        // If no request is provided create one using the server globals
         if (!$request) {
             $request = Request::createFromGlobals();
         }
         $this->request = $request;
 
+        // Populate the $path and $template properties
         $this->parsePath($request->getPathInfo());
     }
 
     /**
-     * Set an array of allowed template names
+     * Set an allowed template and callable to return a TemplateInterface
      *
      * @param Array $templates
      */
@@ -73,7 +100,7 @@ class Server
 
 
     /**
-     * Set an array of allowed template names
+     * Get an array of templates
      *
      * @param Array $templates
      */
@@ -83,16 +110,14 @@ class Server
     }
 
     /**
-     * Run the image Server
+     * Run the image Server on the curent request
      *
-     * @return \Symfony\Component\HttpFoundation\Response The response object
+     * @return Response The response object
      */
     public function run()
     {
-
         // Send a not found response if the request is not valid
         if (!$this->validRequest()) {
-            $this->response = new Response();
             $this->notFound();
             return $this->response;
         }
@@ -110,11 +135,16 @@ class Server
         }
 
         // Finally default to returning a not found response
-        $this->response = new Response();
         $this->notFound();
         return $this->response;
     }
 
+    /**
+     * Generate a response object for a cached image
+     *
+     * @param  string $path Path to the cached image
+     * @return Boolean
+     */
     private function serveFromCache($path)
     {
         //try and load the image from the cache
@@ -139,6 +169,12 @@ class Server
         return false;
     }
 
+    /**
+     * Process a source image and Generate a response object
+     *
+     * @param  string $path Path to the source image
+     * @return Boolean
+     */
     private function serveFromSource($path)
     {
         //try and load the image from the source
@@ -157,6 +193,7 @@ class Server
 
             $this->response = new Response();
 
+            // Set the headers
             $this->response->headers->set('Content-Type', $image->mime);
             $this->response->headers->set('Content-Length', strlen($image->encoded));
             $lastModified = new \DateTime(); // now
@@ -166,22 +203,33 @@ class Server
             $this->response->setContent($image->encoded);
 
             // Write the processed image to the cache
-            $this->cache->write($cachePath, $image->encoded);
+            $this->cache->write($this->getCachePath(), $image->encoded);
 
             return true;
         }
         return false;
     }
 
-    public function notFound($callable = null)
+    /**
+     * Set a user defined not found callback
+     *
+     * @param  callable $callable The user defined notFound callback
+     * @return Boolean
+     */
+    public function setNotFound(callable $callable)
     {
-        // If a callable is provided then set the notFound callback
-        if (is_callable($callable)) {
-            $this->notFound = $callable;
-            return true;
-        }
+        $this->notFound = $callable;
+    }
 
+    /**
+     * Set a not found response
+     *
+     * @return null
+     */
+    public function notFound()
+    {
         // Set the default not found response
+        $this->response = new Response();
         $this->response->setContent('File not found');
         $this->response->headers->set('content-type', 'text/html');
         $this->response->setStatusCode(Response::HTTP_NOT_FOUND);
@@ -192,6 +240,11 @@ class Server
         }
     }
 
+    /**
+     * Send the response to the browser
+     *
+     * @param  Response $response Optional overwrite response
+     */
     public function send(Response $response = null)
     {
         if ($response) {
@@ -201,6 +254,14 @@ class Server
         $this->response->send();
     }
 
+    /**
+     * Process an image using the provided template
+     *
+     * @param  Handler           $file         The handler for the image file
+     * @param  ImageManager      $imageManager The image manipulation manager
+     * @param  TemplateInterface $template     The template
+     * @return Image                           The processed image
+     */
     private function processImage(Handler $file, ImageManager $imageManager, TemplateInterface $template)
     {
         // Process the image using the template
@@ -213,16 +274,31 @@ class Server
         return $image->process($template);
     }
 
+    /**
+     * Get the path for the cached file
+     *
+     * @return string
+     */
     private function getCachePath()
     {
         return $this->template . '/' . $this->path;
     }
 
+    /**
+     * Get the path for the source file
+     *
+     * @return string
+     */
     private function getSourcePath()
     {
         return $this->path;
     }
 
+    /**
+     * Parse the request path to extract the path and template elements
+     *
+     * @param  string $path The complet server path
+     */
     private function parsePath($path)
     {
         // strip out any query params
@@ -233,7 +309,7 @@ class Server
     }
 
     /**
-     * Test if a request is valid
+     * Test if the request is valid
      *
      * @return Boolean
      */
