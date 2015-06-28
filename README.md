@@ -1,7 +1,7 @@
-Image Rack (Kernel)
+ImageRack (Kernel)
 =============
 
-> Kernel for the Image Rack Project. Work In Progress.
+> Kernel for the ImageRack Project. Work In Progress.
 
 Developed by [Diarmuid](https://diarmuid.ie).
 
