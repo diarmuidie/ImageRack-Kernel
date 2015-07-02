@@ -316,7 +316,7 @@ class Server
     private function validRequest()
     {
         // Is a path and template set
-        if (empty($this->template) or empty($this->path)) {
+        if (empty($this->template) || empty($this->path)) {
             return false;
         }
 
