@@ -6,8 +6,8 @@ ImageRack (Kernel)
 Developed by [Diarmuid](https://diarmuid.ie).
 
 [![Build Status](https://travis-ci.org/diarmuidie/ImageRack-Kernel.svg?branch=master)](https://travis-ci.org/diarmuidie/ImageRack-Kernel)
-[![Test Coverage](https://codeclimate.com/github/diarmuidie/ImageRack-Kernel/badges/coverage.svg)](https://codeclimate.com/github/diarmuidie/ImageRack-Kernel/coverage)
-[![Code Climate](https://codeclimate.com/github/diarmuidie/ImageRack-Kernel/badges/gpa.svg)](https://codeclimate.com/github/diarmuidie/ImageRack-Kernel)
+[![Coverage Status](https://coveralls.io/repos/diarmuidie/ImageRack-Kernel/badge.svg?branch=master)](https://coveralls.io/r/diarmuidie/ImageRack-Kernel?branch=master)
+[![SensioLabsInsight](https://insight.sensiolabs.com/projects/36f9f8f8-3c75-4942-a106-c98bee268ad5/mini.png)](https://insight.sensiolabs.com/projects/36f9f8f8-3c75-4942-a106-c98bee268ad5)
 
 Authors
 -------
