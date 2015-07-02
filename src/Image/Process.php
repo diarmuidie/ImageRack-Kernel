@@ -3,7 +3,6 @@
 namespace Diarmuidie\ImageRack\Image;
 
 use \Diarmuidie\ImageRack\Image\TemplateInterface;
-use \League\Flysystem\File;
 use \Intervention\Image\ImageManager;
 
 /**
