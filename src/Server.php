@@ -89,9 +89,10 @@ class Server
     }
 
     /**
-     * Set an allowed template and callable to return a TemplateInterface
+     *  Set an allowed template and callable to return a TemplateInterface
      *
-     * @param Array $templates
+     * @param string   $name             The name of the template
+     * @param callable $templateCallback The template callback
      */
     public function setTemplate($name, callable $templateCallback)
     {
@@ -102,7 +103,7 @@ class Server
     /**
      * Get an array of templates
      *
-     * @param Array $templates
+     * @return Array The array of set templates
      */
     public function getTemplates()
     {
