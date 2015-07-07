@@ -243,7 +243,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $image->mime = 'image/png';
         $image->encoded = $imageContent;
 
-        $file = Mockery::mock('\League\Flysystem\Handler')
+        $file = Mockery::mock('\League\Flysystem\File')
         ->shouldReceive('readStream')->andReturn(Mockery::type('resource'))->once()
         ->mock();
 

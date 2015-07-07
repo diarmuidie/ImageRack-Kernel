@@ -2,7 +2,7 @@
 
 namespace Diarmuidie\ImageRack;
 
-use \League\Flysystem\Handler;
+use \League\Flysystem\File;
 use \League\Flysystem\FilesystemInterface;
 use \Intervention\Image\ImageManager;
 use \Intervention\Image\Image;
@@ -258,12 +258,12 @@ class Server
     /**
      * Process an image using the provided template
      *
-     * @param  Handler           $file         The handler for the image file
+     * @param  File              $file         The file handler for the image
      * @param  ImageManager      $imageManager The image manipulation manager
      * @param  TemplateInterface $template     The template
      * @return Image                           The processed image
      */
-    private function processImage(Handler $file, ImageManager $imageManager, TemplateInterface $template)
+    private function processImage(File $file, ImageManager $imageManager, TemplateInterface $template)
     {
         // Process the image using the template
         $image = new \Diarmuidie\ImageRack\Image\Process(
