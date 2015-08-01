@@ -84,6 +84,77 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(404, $response->getStatusCode());
     }
 
+
+    public function testDefaultError()
+    {
+        $server = new Server($this->source, $this->cache, $this->imageManager);
+
+        $this->expectOutputString('There has been a problem serving this request.');
+
+        $server->error(new \Exception('Test Exception'));
+    }
+
+
+    public function testCallableError()
+    {
+        $server = new Server($this->source, $this->cache, $this->imageManager);
+
+        // Setup our notFound callback to edit the response body
+        $server->setError(function ($response, $exception) {
+            return $response->setContent($exception->getMessage());
+        });
+
+        $message = 'Test Exception';
+
+        $this->expectOutputString($message);
+
+        $server->error(new \Exception($message));
+    }
+
+    public function testErrorHandlerThrowsException()
+    {
+        $errno = 2;
+        $errstr = 'Error Message';
+        $errfile = 'file.php';
+        $errline = '123';
+
+        // Store the old error reporting level
+        $errorReporting = error_reporting();
+
+        // Make sure all errors are being reported
+        error_reporting(E_ALL);
+
+        $this->setExpectedException('ErrorException', $errstr, $errno);
+
+        Server::handleErrors($errno, $errstr, $errfile, $errline);
+
+        // Restore error reporting level
+        error_reporting($errorReporting);
+    }
+
+
+    public function testErrorHandlerDoesntThrowExceptionWhenReportingOff()
+    {
+        $errno = 2;
+        $errstr = 'Error Message';
+        $errfile = 'file.php';
+        $errline = '123';
+
+        // Store the old error reporting level
+        $errorReporting = error_reporting();
+
+        // Turn off error reporting
+        error_reporting(0);
+
+        $response = Server::handleErrors($errno, $errstr, $errfile, $errline);
+
+        $this->assertNull($reponse);
+
+        // Restore error reporting level
+        error_reporting($errorReporting);
+    }
+
+
     /**
      * @covers Diarmuidie\ImageRack\Server::send
      */

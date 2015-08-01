@@ -43,6 +43,11 @@ class Server
     private $notFound;
 
     /**
+     * @var callable
+     */
+    private $error;
+
+    /**
      * Array of valid templates [name => callable]
      * @var array
      */
@@ -117,6 +122,12 @@ class Server
      */
     public function run()
     {
+        // Catch all errors and convert to exceptions
+        set_error_handler(array('\Diarmuidie\ImageRack\Server', 'handleErrors'));
+
+        // Catch all uncaught exceptions
+        set_exception_handler(array($this, 'error'));
+
         // Send a not found response if the request is not valid
         if (!$this->validRequest()) {
             $this->notFound();
@@ -138,6 +149,26 @@ class Server
         // Finally default to returning a not found response
         $this->notFound();
         return $this->response;
+    }
+
+    /**
+     * Convert errors into ErrorException objects
+     *
+     * This method catches PHP errors and converts them into \ErrorException objects.
+     *
+     * @param  int            $errno   The numeric type of the Error
+     * @param  string         $errstr  The error message
+     * @param  string         $errfile The absolute path to the affected file
+     * @param  int            $errline The line number of the error in the affected file
+     * @return bool
+     * @throws \ErrorException
+     */
+    public static function handleErrors($errno, $errstr = '', $errfile = '', $errline = '')
+    {
+        if (!($errno & error_reporting())) {
+            return;
+        }
+        throw new \ErrorException($errstr, $errno, 0, $errfile, $errline);
     }
 
     /**
@@ -215,7 +246,7 @@ class Server
      * Set a user defined not found callback
      *
      * @param  callable $callable The user defined notFound callback
-     * @return Boolean
+     * @return null
      */
     public function setNotFound(callable $callable)
     {
@@ -227,7 +258,7 @@ class Server
      *
      * @return null
      */
-    public function notFound()
+    protected function notFound()
     {
         // Set the default not found response
         $this->response = new Response();
@@ -239,6 +270,40 @@ class Server
         if (is_callable($this->notFound)) {
             $this->response = call_user_func($this->notFound, $this->response);
         }
+    }
+
+    /**
+     * Set a user defined error callback
+     *
+     * @param  callable $callable The user defined error callback
+     * @return null
+     */
+    public function setError(callable $callable)
+    {
+        $this->error = $callable;
+    }
+
+    /**
+     * Set an error response
+     *
+     * @param  Exceptions $exception The caught exception
+     * @return null
+     */
+    public function error($exception)
+    {
+        // Set the default error response
+        $this->response = new Response();
+        $this->response->setContent('There has been a problem serving this request.');
+        $this->response->headers->set('content-type', 'text/html');
+        $this->response->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
+
+        // Execute the user defined error callback
+        if (is_callable($this->error)) {
+            $this->response = call_user_func($this->error, $this->response, $exception);
+        }
+
+        // Send the response
+        $this->response->send();
     }
 
     /**
