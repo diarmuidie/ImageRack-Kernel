@@ -66,6 +66,12 @@ class Server
     private $path;
 
     /**
+     * The cache max age in seconds (one month)
+     * @var integer
+     */
+    private $maxAge = 2678400;
+
+    /**
      * Bootstrap the server dependencies
      *
      * @param FilesystemInterface $source       The source image location
@@ -88,6 +94,8 @@ class Server
             $request = Request::createFromGlobals();
         }
         $this->request = $request;
+
+        $this->response = new Response();
 
         // Populate the $path and $template properties
         $this->parsePath($request->getPathInfo());
@@ -188,9 +196,21 @@ class Server
             // Set the headers
             $this->response->headers->set('Content-Type', $file->getMimetype());
             $this->response->headers->set('Content-Length', $file->getSize());
+
             $lastModified = new \DateTime();
             $lastModified->setTimestamp($file->getTimestamp());
-            $this->response->setLastModified($lastModified);
+
+            $this->response->setCache([
+                'etag' => md5($path . $lastModified->getTimestamp()),
+                'last_modified' => $lastModified,
+                'max_age' => $this->maxAge,
+                'public' => true
+            ]);
+
+            // Respond with 304 not modified
+            if ($this->response->isNotModified($this->request)) {
+                return true;
+            }
 
             $this->response->setCallback(function () use ($file) {
                 fpassthru($file->readStream());
@@ -223,13 +243,18 @@ class Server
                 $template
             );
 
-            $this->response = new Response();
-
             // Set the headers
             $this->response->headers->set('Content-Type', $image->mime);
             $this->response->headers->set('Content-Length', strlen($image->encoded));
+
             $lastModified = new \DateTime(); // now
-            $this->response->setLastModified($lastModified);
+
+            $this->response->setCache([
+                'etag' => md5($path . $lastModified->getTimestamp()),
+                'last_modified' => $lastModified,
+                'max_age' => $this->maxAge,
+                'public' => true
+            ]);
 
             // Send the processed image in the response
             $this->response->setContent($image->encoded);
@@ -261,7 +286,6 @@ class Server
     protected function notFound()
     {
         // Set the default not found response
-        $this->response = new Response();
         $this->response->setContent('File not found');
         $this->response->headers->set('content-type', 'text/html');
         $this->response->setStatusCode(Response::HTTP_NOT_FOUND);
@@ -292,7 +316,6 @@ class Server
     public function error($exception)
     {
         // Set the default error response
-        $this->response = new Response();
         $this->response->setContent('There has been a problem serving this request.');
         $this->response->headers->set('content-type', 'text/html');
         $this->response->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);

@@ -265,10 +265,11 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          * Setup the mock objects
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
-        ->shouldReceive('getPathInfo')->andReturn('template/image.png') ->once()
+        ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
+        ->shouldReceive('isMethodSafe')->andReturn(false)->once()
         ->mock();
 
-        $modifiedTimestamp = '1435428950';
+        $modifiedTimestamp = time();
 
         $image = Mockery::mock('\Intervention\Image\Image')
         ->shouldReceive('getMimetype')->andReturn('image/png')->once()
@@ -298,6 +299,10 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals(1234, $response->headers->get('content-length'));
         $this->assertEquals($actualModified, $response->getLastModified());
+        $this->assertEquals(2678400, $response->getMaxAge());
+        $this->assertEquals('"' . md5('template/image.png' . $modifiedTimestamp) . '"', $response->getEtag());
+        $this->assertTrue($response->headers->hasCacheControlDirective('public'));
+
     }
 
     public function testSendImageFromSource()
@@ -349,6 +354,54 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1234, $response->headers->get('content-length'));
         $this->assertEquals('image/png', $response->headers->get('content-type'));
         $this->assertEquals($imageContent, $response->getContent());
+        $this->assertEquals(2678400, $response->getMaxAge());
+        $this->assertEquals(34, strlen($response->getEtag()));
+        $this->assertTrue($response->headers->hasCacheControlDirective('public'));
 
+    }
+
+    public function testSendNotModifiedResponse()
+    {
+        $modifiedTimestamp = time();
+
+        /*
+         * Setup the mock objects
+         */
+        $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
+        ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
+        ->shouldReceive('isMethodSafe')->andReturn(true)->once()
+        ->shouldReceive('getETags')->andReturn([])->once()
+        ->mock();
+
+        $request->headers = Mockery::mock('\Symfony\Component\HttpFoundation\HeaderBag')
+        ->shouldReceive('get')
+        ->with('If-Modified-Since')
+        ->andReturn(date('D, d M Y H:i:s T', $modifiedTimestamp))
+        ->mock();
+
+
+        $image = Mockery::mock('\Intervention\Image\Image')
+        ->shouldReceive('getMimetype')->andReturn('image/png')->once()
+        ->shouldReceive('getSize')->andReturn(1234)->once()
+        ->shouldReceive('getTimestamp')->andReturn($modifiedTimestamp - 86400)->once()
+        ->mock();
+
+        $this->cache
+        ->shouldReceive('has')->with('template/image.png')->andReturn(true)->once()
+        ->shouldReceive('get')->with('template/image.png')->andReturn($image)->once();
+
+        /*
+         * Run the server
+         */
+        $server = new Server($this->source, $this->cache, $this->imageManager, $request);
+        $server->setTemplate('template', function () {
+            // Empty callable for testing
+        });
+        $response = $server->run();
+
+        /*
+         * Test assertions
+         */
+        $this->assertEquals(304, $response->getStatusCode());
     }
 }
