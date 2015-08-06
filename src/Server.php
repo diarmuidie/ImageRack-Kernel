@@ -250,7 +250,7 @@ class Server
             $lastModified = new \DateTime(); // now
 
             $this->response->setCache([
-                'etag' => md5($path . $lastModified->getTimestamp()),
+                'etag' => md5($this->getCachePath() . $lastModified->getTimestamp()),
                 'last_modified' => $lastModified,
                 'max_age' => $this->maxAge,
                 'public' => true
