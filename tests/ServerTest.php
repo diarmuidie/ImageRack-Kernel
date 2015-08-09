@@ -205,9 +205,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          * Setup the mock objects
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
-        ->shouldReceive('getPathInfo')
-        ->andReturn('template/image.png')
-        ->once()
+        ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
         ->mock();
 
         /*
@@ -233,9 +231,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          * Setup the mock objects
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
-        ->shouldReceive('getPathInfo')
-        ->andReturn('template/image.png')
-        ->once()
+        ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
         ->mock();
 
         $this->cache
@@ -358,6 +354,55 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(34, strlen($response->getEtag()));
         $this->assertTrue($response->headers->hasCacheControlDirective('public'));
 
+    }
+
+    public function testSetCacheMaxAge() {
+        $server = new Server($this->source, $this->cache, $this->imageManager);
+
+        $maxAge = 100;
+
+        $server->setHttpCacheMaxAge($maxAge);
+
+        $this->assertEquals($maxAge, $server->getHttpCacheMaxAge());
+    }
+
+    public function testCacheHeadersSent()
+    {
+        /*
+         * Setup the mock objects
+         */
+         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
+         ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
+         ->shouldReceive('isMethodSafe')->andReturn(false)->twice()
+         ->mock();
+
+        $image = Mockery::mock('\Intervention\Image\Image')
+        ->shouldReceive('getMimetype')->andReturn('image/png')->twice()
+        ->shouldReceive('getSize')->andReturn(1234)->twice()
+        ->shouldReceive('getTimestamp')->andReturn(time())->twice()
+        ->mock();
+
+        $this->cache
+        ->shouldReceive('has')->with('template/image.png')->andReturn(true)->twice()
+        ->shouldReceive('get')->with('template/image.png')->andReturn($image)->twice();
+
+        /*
+         * Run the server
+         */
+        $server = new Server($this->source, $this->cache, $this->imageManager, $request);
+        $server->setTemplate('template', function () {
+            // Empty callable for testing
+        });
+        $response = $server->run();
+
+        // Test is cachable
+        $this->assertTrue($response->isCacheable());
+
+        $server->setHttpCacheMaxAge(0);
+        $response = $server->run();
+
+        // Test isn't cachable
+        $this->assertFalse($response->isCacheable());
     }
 
     public function testSendNotModifiedResponse()

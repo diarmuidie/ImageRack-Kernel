@@ -124,6 +124,28 @@ class Server
     }
 
     /**
+     * Set the Cache header max age. Set to zero to disable
+     *
+     * @param integer $maxAge Amount of seconds to cache the image
+     */
+    public function setHttpCacheMaxAge($maxAge)
+    {
+        if (is_numeric(($maxAge))) {
+            $this->maxAge = $maxAge;
+        }
+    }
+
+    /**
+     * Get the the Cache header max age.
+     *
+     * @return Int Cache age in seconds.
+     */
+    public function getHttpCacheMaxAge()
+    {
+        return $this->maxAge;
+    }
+
+    /**
      * Run the image Server on the curent request
      *
      * @return Response The response object
@@ -200,12 +222,11 @@ class Server
             $lastModified = new \DateTime();
             $lastModified->setTimestamp($file->getTimestamp());
 
-            $this->response->setCache([
-                'etag' => md5($path . $lastModified->getTimestamp()),
-                'last_modified' => $lastModified,
-                'max_age' => $this->maxAge,
-                'public' => true
-            ]);
+            $this->setHttpCacheHeaders(
+                $lastModified,
+                md5($this->getCachePath() . $lastModified->getTimestamp()),
+                $this->maxAge
+            );
 
             // Respond with 304 not modified
             if ($this->response->isNotModified($this->request)) {
@@ -249,12 +270,11 @@ class Server
 
             $lastModified = new \DateTime(); // now
 
-            $this->response->setCache([
-                'etag' => md5($this->getCachePath() . $lastModified->getTimestamp()),
-                'last_modified' => $lastModified,
-                'max_age' => $this->maxAge,
-                'public' => true
-            ]);
+            $this->setHttpCacheHeaders(
+                $lastModified,
+                md5($this->getCachePath() . $lastModified->getTimestamp()),
+                $this->maxAge
+            );
 
             // Send the processed image in the response
             $this->response->setContent($image->encoded);
@@ -265,6 +285,28 @@ class Server
             return true;
         }
         return false;
+    }
+
+    /**
+     * Set the appripriate HTTP cache headers
+     *
+     * @param DateTime $lastModified The last time the resource was modified.
+     * @param string   $eTag         Unique eTag for the resource.
+     * @param integer  $maxAge       The max age (in seconds).
+     * @return void
+     */
+    private function setHttpCacheHeaders(\DateTime $lastModified, $eTag, $maxAge)
+    {
+        $this->response->setMaxAge($maxAge);
+        $this->response->setPublic();
+
+        if ($this->maxAge === 0) {
+            $this->response->headers->set('Cache-Control', 'no-cache');
+            return;
+        }
+
+        $this->response->setLastModified($lastModified);
+        $this->response->setEtag($eTag);
     }
 
     /**
