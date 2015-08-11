@@ -356,7 +356,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
     }
 
-    public function testSetCacheMaxAge() {
+    public function testSetCacheMaxAge()
+    {
         $server = new Server($this->source, $this->cache, $this->imageManager);
 
         $maxAge = 100;
@@ -364,6 +365,18 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $server->setHttpCacheMaxAge($maxAge);
 
         $this->assertEquals($maxAge, $server->getHttpCacheMaxAge());
+    }
+
+    public function testInvalidSetCacheMaxAgeThrowsException()
+    {
+        $server = new Server($this->source, $this->cache, $this->imageManager);
+
+        $this->setExpectedException(
+            'InvalidArgumentException',
+            'setHttpCacheMaxAge method only accepts integers. Input was: notANumber'
+        );
+
+        $server->setHttpCacheMaxAge('notANumber');
     }
 
     public function testCacheHeadersSent()

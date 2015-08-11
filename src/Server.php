@@ -126,13 +126,18 @@ class Server
     /**
      * Set the Cache header max age. Set to zero to disable
      *
-     * @param integer $maxAge Amount of seconds to cache the image
+     * @param  Integer                  $maxAge Amount of seconds to cache the image
+     * @return Void
+     * @throws InvalidArgumentException
      */
     public function setHttpCacheMaxAge($maxAge)
     {
-        if (is_numeric(($maxAge))) {
-            $this->maxAge = $maxAge;
+        if (!is_int(($maxAge))) {
+            throw new \InvalidArgumentException(
+                'setHttpCacheMaxAge method only accepts integers. Input was: ' . $maxAge
+            );
         }
+        $this->maxAge = $maxAge;
     }
 
     /**
