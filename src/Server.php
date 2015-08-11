@@ -99,7 +99,9 @@ class Server
         $this->response = new Response();
 
         // Populate the $path and $template properties
-        $this->parsePath($request->getPathInfo());
+        $parsed = $this->parsePath($request->getPathInfo());
+        $this->template = $parsed['template'];
+        $this->path = $parsed['path'];
     }
 
     /**
@@ -437,15 +439,22 @@ class Server
      * Parse the request path to extract the path and template elements
      *
      * @param  String $path The complet server path
-     * @return Void
+     * @return Array        Array of 'template' and 'path' portions of the URL
      */
     private function parsePath($path)
     {
+        $parts = array(
+            'template' => null,
+            'path' => null
+        );
+
         // strip out any query params
         if (preg_match('/^\/?(.*?)\/(.*)/', $path, $matches)) {
-            $this->template = $matches[1];
-            $this->path = $matches[2];
+            $parts['template'] = $matches[1];
+            $parts['path'] = $matches[2];
         }
+
+        return $parts;
     }
 
     /**
