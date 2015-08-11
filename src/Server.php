@@ -38,6 +38,11 @@ class Server
     private $request;
 
     /**
+     * @var Response
+     */
+    private $response;
+
+    /**
      * @var Callable
      */
     private $notFound;
