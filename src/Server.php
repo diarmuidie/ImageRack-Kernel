@@ -204,7 +204,7 @@ class Server
      * @param  string         $errstr  The error message
      * @param  String         $errfile The absolute path to the affected file
      * @param  Int            $errline The line number of the error in the affected file
-     * @return Boolean
+     * @return Void
      * @throws ErrorException
      */
     public static function handleErrors($errno, $errstr = '', $errfile = '', $errline = '')
@@ -304,9 +304,9 @@ class Server
     /**
      * Set the appripriate HTTP cache headers
      *
-     * @param DateTime $lastModified The last time the resource was modified.
-     * @param String   $eTag         Unique eTag for the resource.
-     * @param Integer  $maxAge       The max age (in seconds).
+     * @param \DateTime $lastModified The last time the resource was modified.
+     * @param String    $eTag         Unique eTag for the resource.
+     * @param Integer   $maxAge       The max age (in seconds).
      * @return Void
      */
     private function setHttpCacheHeaders(\DateTime $lastModified, $eTag, $maxAge)
