@@ -18,56 +18,56 @@ class Server
 {
 
     /**
-     * @var \League\Flysystem\FilesystemInterface
+     * @var FilesystemInterface
      */
     private $source;
 
     /**
-     * @var \League\Flysystem\FilesystemInterface
+     * @var FilesystemInterface
      */
     private $cache;
 
     /**
-     * @var \Intervention\Image\ImageManager
+     * @var ImageManager
      */
     private $imageManager;
 
     /**
-     * @var \Symfony\Component\HttpFoundation\Request
+     * @var Request
      */
     private $request;
 
     /**
-     * @var callable
+     * @var Callable
      */
     private $notFound;
 
     /**
-     * @var callable
+     * @var Callable
      */
     private $error;
 
     /**
      * Array of valid templates [name => callable]
-     * @var array
+     * @var Array
      */
     private $templates = array();
 
     /**
      * Current request template
-     * @var string
+     * @var String
      */
     private $template;
 
     /**
      * Current request path
-     * @var string
+     * @var String
      */
     private $path;
 
     /**
      * The cache max age in seconds (one month)
-     * @var integer
+     * @var Integer
      */
     private $maxAge = 2678400;
 
@@ -78,6 +78,7 @@ class Server
      * @param FilesystemInterface $cache        The cache image location
      * @param ImageManager        $imageManager The image manipulatpion object
      * @param Request             $request      Optional overwride request object
+     * @return Void
      */
     public function __construct(
         FilesystemInterface $source,
@@ -104,8 +105,9 @@ class Server
     /**
      *  Set an allowed template and callable to return a TemplateInterface
      *
-     * @param string   $name             The name of the template
-     * @param callable $templateCallback The template callback
+     * @param String   $name             The name of the template
+     * @param Callable $templateCallback The template callback
+     * @return Void
      */
     public function setTemplate($name, callable $templateCallback)
     {
@@ -143,7 +145,7 @@ class Server
     /**
      * Get the the Cache header max age.
      *
-     * @return Int Cache age in seconds.
+     * @return Integer Cache age in seconds.
      */
     public function getHttpCacheMaxAge()
     {
@@ -191,12 +193,12 @@ class Server
      *
      * This method catches PHP errors and converts them into \ErrorException objects.
      *
-     * @param  int            $errno   The numeric type of the Error
+     * @param  Integer        $errno   The numeric type of the Error
      * @param  string         $errstr  The error message
-     * @param  string         $errfile The absolute path to the affected file
-     * @param  int            $errline The line number of the error in the affected file
-     * @return bool
-     * @throws \ErrorException
+     * @param  String         $errfile The absolute path to the affected file
+     * @param  Int            $errline The line number of the error in the affected file
+     * @return Boolean
+     * @throws ErrorException
      */
     public static function handleErrors($errno, $errstr = '', $errfile = '', $errline = '')
     {
@@ -209,7 +211,7 @@ class Server
     /**
      * Generate a response object for a cached image
      *
-     * @param  string $path Path to the cached image
+     * @param  String  $path Path to the cached image
      * @return Boolean
      */
     private function serveFromCache($path)
@@ -250,7 +252,7 @@ class Server
     /**
      * Process a source image and Generate a response object
      *
-     * @param  string $path Path to the source image
+     * @param  String  $path Path to the source image
      * @return Boolean
      */
     private function serveFromSource($path)
@@ -296,9 +298,9 @@ class Server
      * Set the appripriate HTTP cache headers
      *
      * @param DateTime $lastModified The last time the resource was modified.
-     * @param string   $eTag         Unique eTag for the resource.
-     * @param integer  $maxAge       The max age (in seconds).
-     * @return void
+     * @param String   $eTag         Unique eTag for the resource.
+     * @param Integer  $maxAge       The max age (in seconds).
+     * @return Void
      */
     private function setHttpCacheHeaders(\DateTime $lastModified, $eTag, $maxAge)
     {
@@ -317,8 +319,8 @@ class Server
     /**
      * Set a user defined not found callback
      *
-     * @param  callable $callable The user defined notFound callback
-     * @return null
+     * @param  Callable $callable The user defined notFound callback
+     * @return Void
      */
     public function setNotFound(callable $callable)
     {
@@ -328,7 +330,7 @@ class Server
     /**
      * Set a not found response
      *
-     * @return null
+     * @return Void
      */
     protected function notFound()
     {
@@ -346,8 +348,8 @@ class Server
     /**
      * Set a user defined error callback
      *
-     * @param  callable $callable The user defined error callback
-     * @return null
+     * @param  Callable $callable The user defined error callback
+     * @return Void
      */
     public function setError(callable $callable)
     {
@@ -358,7 +360,7 @@ class Server
      * Set an error response
      *
      * @param  Exceptions $exception The caught exception
-     * @return null
+     * @return Void
      */
     public function error($exception)
     {
@@ -380,6 +382,7 @@ class Server
      * Send the response to the browser
      *
      * @param  Response $response Optional overwrite response
+     * @return Void
      */
     public function send(Response $response = null)
     {
@@ -413,7 +416,7 @@ class Server
     /**
      * Get the path for the cached file
      *
-     * @return string
+     * @return String
      */
     private function getCachePath()
     {
@@ -423,7 +426,7 @@ class Server
     /**
      * Get the path for the source file
      *
-     * @return string
+     * @return String
      */
     private function getSourcePath()
     {
@@ -433,7 +436,8 @@ class Server
     /**
      * Parse the request path to extract the path and template elements
      *
-     * @param  string $path The complet server path
+     * @param  String $path The complet server path
+     * @return Void
      */
     private function parsePath($path)
     {
