@@ -301,7 +301,7 @@ class Server
 
             // Setup a callback to write the processed image to the cache
             // This will be called after the image has been sent to the browser
-            $this->cacheWrite = function ($cache, $path) use ($image) {
+            $this->cacheWrite = function (FilesystemInterface $cache, $path) use ($image) {
                 // use put() to write or update
                 $cache->put($path, $image->encoded);
             };
