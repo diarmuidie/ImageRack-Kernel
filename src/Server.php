@@ -53,6 +53,12 @@ class Server
     private $error;
 
     /**
+     * Callback to save a process image to the cache
+     * @var Callable
+     */
+    private $cacheWrite;
+
+    /**
      * Array of valid templates [name => callable]
      * @var Array
      */
@@ -293,8 +299,12 @@ class Server
             // Send the processed image in the response
             $this->response->setContent($image->encoded);
 
-            // Write the processed image to the cache
-            $this->cache->write($this->getCachePath(), $image->encoded);
+            // Setup a callback to write the processed image to the cache
+            // This will be called after the image has been sent to the browser
+            $this->cacheWrite = function ($cache, $path) use ($image) {
+                // use put() to write or update
+                $cache->put($path, $image->encoded);
+            };
 
             return true;
         }
@@ -398,6 +408,15 @@ class Server
         }
         $this->response->prepare($this->request);
         $this->response->send();
+
+        // If a cacheWrite callback exists execute
+        // it now to write the image to the cache
+        if (is_callable($this->cacheWrite)) {
+            call_user_func_array(
+                $this->cacheWrite,
+                array($this->cache, $this->getCachePath())
+            );
+        }
     }
 
     /**

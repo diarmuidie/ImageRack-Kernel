@@ -353,7 +353,55 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(2678400, $response->getMaxAge());
         $this->assertEquals(34, strlen($response->getEtag()));
         $this->assertTrue($response->headers->hasCacheControlDirective('public'));
+    }
 
+    public function testPutProcessedImageInCache()
+    {
+        /*
+         * Setup the mock objects
+         */
+        $response = Mockery::mock('\Symfony\Component\HttpFoundation\Response')
+            ->shouldReceive('prepare')->andReturn(\Mockery::self())->once()
+            ->shouldReceive('send')->andReturn(\Mockery::self())->once()
+            ->mock();
+
+        $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
+            ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
+            ->mock();
+
+        $imageContent = str_repeat('.', 1234);
+        $image = Mockery::mock('\Intervention\Image\Image');
+        $image->mime = 'image/png';
+        $image->encoded = $imageContent;
+
+        $file = Mockery::mock('\League\Flysystem\File')
+            ->shouldReceive('readStream')->andReturn(Mockery::type('resource'))->once()
+            ->mock();
+
+        $template = Mockery::mock('\Diarmuidie\ImageRack\Image\TemplateInterface')
+            ->shouldReceive('process')->andReturn($image)->once()
+            ->mock();
+
+        $this->cache
+            ->shouldReceive('has')->with('template/image.png')->andReturn(false)->once()
+            ->shouldReceive('put')->once();
+
+        $this->source
+            ->shouldReceive('has')->with('image.png')->andReturn(true)->once()
+            ->shouldReceive('get')->with('image.png')->andReturn($file)->once();
+
+        $this->imageManager
+            ->shouldReceive('make')->andReturn($image)->once();
+
+        /*
+         * Run the server
+         */
+        $server = new Server($this->source, $this->cache, $this->imageManager, $request);
+        $server->setTemplate('template', function () use ($template) {
+            return $template;
+        });
+        $server->run();
+        $server->send($response);
     }
 
     public function testSetCacheMaxAge()
