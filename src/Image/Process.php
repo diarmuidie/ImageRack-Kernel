@@ -45,6 +45,12 @@ class Process
 
         $image = $template->process($image);
 
+        // Encode the image if it hasn't
+        // been encoded in the template.
+        if (empty($image->encoded)) {
+            $image->encode();
+        }
+
         return $image;
     }
 }
