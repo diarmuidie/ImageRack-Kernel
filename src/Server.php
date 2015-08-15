@@ -71,7 +71,7 @@ class Server
     private $path;
 
     /**
-     * The cache max age in seconds (one month)
+     * The http cache max age header value in seconds (one month)
      * @var Integer
      */
     private $maxAge = 2678400;
