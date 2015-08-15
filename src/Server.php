@@ -381,18 +381,20 @@ class Server
      */
     public function error($exception)
     {
+        $response = new Response();
+
         // Set the default error response
-        $this->response->setContent('There has been a problem serving this request.');
-        $this->response->headers->set('content-type', 'text/html');
-        $this->response->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
+        $response->setContent('There has been a problem serving this request.');
+        $response->headers->set('content-type', 'text/html');
+        $response->setStatusCode(Response::HTTP_INTERNAL_SERVER_ERROR);
 
         // Execute the user defined error callback
         if (is_callable($this->error)) {
-            $this->response = call_user_func($this->error, $this->response, $exception);
+            $response = call_user_func($this->error, $response, $exception);
         }
 
         // Send the response
-        $this->response->send();
+        $response->send();
     }
 
     /**
