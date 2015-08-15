@@ -178,10 +178,10 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          * Setup the mock objects
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
-        ->shouldReceive('getPathInfo')
-        ->andReturn('invalidPath.png')
-        ->once()
-        ->mock();
+            ->shouldReceive('getPathInfo')
+            ->andReturn('invalidPath.png')
+            ->once()
+            ->mock();
 
         /*
          * Run the server
@@ -205,8 +205,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          * Setup the mock objects
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
-        ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
-        ->mock();
+            ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
+            ->mock();
 
         /*
          * Run the server
@@ -231,14 +231,14 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          * Setup the mock objects
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
-        ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
-        ->mock();
+            ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
+            ->mock();
 
         $this->cache
-        ->shouldReceive('has')->with('template/image.png')->andReturn(false)->once();
+            ->shouldReceive('has')->with('template/image.png')->andReturn(false)->once();
 
         $this->source
-        ->shouldReceive('has')->with('image.png')->andReturn(false)->once();
+            ->shouldReceive('has')->with('image.png')->andReturn(false)->once();
 
         /*
          * Run the server
@@ -261,21 +261,21 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          * Setup the mock objects
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
-        ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
-        ->shouldReceive('isMethodSafe')->andReturn(false)->once()
-        ->mock();
+            ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
+            ->shouldReceive('isMethodSafe')->andReturn(false)->once()
+            ->mock();
 
         $modifiedTimestamp = time();
 
         $image = Mockery::mock('\Intervention\Image\Image')
-        ->shouldReceive('getMimetype')->andReturn('image/png')->once()
-        ->shouldReceive('getSize')->andReturn(1234)->once()
-        ->shouldReceive('getTimestamp')->andReturn($modifiedTimestamp)->once()
-        ->mock();
+            ->shouldReceive('getMimetype')->andReturn('image/png')->once()
+            ->shouldReceive('getSize')->andReturn(1234)->once()
+            ->shouldReceive('getTimestamp')->andReturn($modifiedTimestamp)->once()
+            ->mock();
 
         $this->cache
-        ->shouldReceive('has')->with('template/image.png')->andReturn(true)->once()
-        ->shouldReceive('get')->with('template/image.png')->andReturn($image)->once();
+            ->shouldReceive('has')->with('template/image.png')->andReturn(true)->once()
+            ->shouldReceive('get')->with('template/image.png')->andReturn($image)->once();
 
         /*
          * Run the server
@@ -307,8 +307,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          * Setup the mock objects
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
-        ->shouldReceive('getPathInfo')->andReturn('template/image.png') ->once()
-        ->mock();
+            ->shouldReceive('getPathInfo')->andReturn('template/image.png') ->once()
+            ->mock();
 
         $imageContent = str_repeat('.', 1234);
         $image = Mockery::mock('\Intervention\Image\Image');
@@ -316,23 +316,22 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $image->encoded = $imageContent;
 
         $file = Mockery::mock('\League\Flysystem\File')
-        ->shouldReceive('readStream')->andReturn(Mockery::type('resource'))->once()
-        ->mock();
+            ->shouldReceive('readStream')->andReturn(Mockery::type('resource'))->once()
+            ->mock();
 
         $template = Mockery::mock('\Diarmuidie\ImageRack\Image\TemplateInterface')
-        ->shouldReceive('process')->andReturn($image)->once()
-        ->mock();
+            ->shouldReceive('process')->andReturn($image)->once()
+            ->mock();
 
         $this->cache
-        ->shouldReceive('has')->with('template/image.png')->andReturn(false)->once()
-        ->shouldReceive('write')->once();
+            ->shouldReceive('has')->with('template/image.png')->andReturn(false)->once();
 
         $this->source
-        ->shouldReceive('has')->with('image.png')->andReturn(true)->once()
-        ->shouldReceive('get')->with('image.png')->andReturn($file)->once();
+            ->shouldReceive('has')->with('image.png')->andReturn(true)->once()
+            ->shouldReceive('get')->with('image.png')->andReturn($file)->once();
 
         $this->imageManager
-        ->shouldReceive('make')->andReturn($image)->once();
+            ->shouldReceive('make')->andReturn($image)->once();
 
         /*
          * Run the server
@@ -433,19 +432,19 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          * Setup the mock objects
          */
          $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
-         ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
-         ->shouldReceive('isMethodSafe')->andReturn(false)->twice()
-         ->mock();
+             ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
+             ->shouldReceive('isMethodSafe')->andReturn(false)->twice()
+             ->mock();
 
         $image = Mockery::mock('\Intervention\Image\Image')
-        ->shouldReceive('getMimetype')->andReturn('image/png')->twice()
-        ->shouldReceive('getSize')->andReturn(1234)->twice()
-        ->shouldReceive('getTimestamp')->andReturn(time())->twice()
-        ->mock();
+            ->shouldReceive('getMimetype')->andReturn('image/png')->twice()
+            ->shouldReceive('getSize')->andReturn(1234)->twice()
+            ->shouldReceive('getTimestamp')->andReturn(time())->twice()
+            ->mock();
 
         $this->cache
-        ->shouldReceive('has')->with('template/image.png')->andReturn(true)->twice()
-        ->shouldReceive('get')->with('template/image.png')->andReturn($image)->twice();
+            ->shouldReceive('has')->with('template/image.png')->andReturn(true)->twice()
+            ->shouldReceive('get')->with('template/image.png')->andReturn($image)->twice();
 
         /*
          * Run the server
@@ -474,27 +473,27 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          * Setup the mock objects
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
-        ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
-        ->shouldReceive('isMethodSafe')->andReturn(true)->once()
-        ->shouldReceive('getETags')->andReturn([])->once()
-        ->mock();
+            ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
+            ->shouldReceive('isMethodSafe')->andReturn(true)->once()
+            ->shouldReceive('getETags')->andReturn([])->once()
+            ->mock();
 
         $request->headers = Mockery::mock('\Symfony\Component\HttpFoundation\HeaderBag')
-        ->shouldReceive('get')
-        ->with('If-Modified-Since')
-        ->andReturn(date('D, d M Y H:i:s T', $modifiedTimestamp))
-        ->mock();
+            ->shouldReceive('get')
+            ->with('If-Modified-Since')
+            ->andReturn(date('D, d M Y H:i:s T', $modifiedTimestamp))
+            ->mock();
 
 
         $image = Mockery::mock('\Intervention\Image\Image')
-        ->shouldReceive('getMimetype')->andReturn('image/png')->once()
-        ->shouldReceive('getSize')->andReturn(1234)->once()
-        ->shouldReceive('getTimestamp')->andReturn($modifiedTimestamp - 86400)->once()
-        ->mock();
+            ->shouldReceive('getMimetype')->andReturn('image/png')->once()
+            ->shouldReceive('getSize')->andReturn(1234)->once()
+            ->shouldReceive('getTimestamp')->andReturn($modifiedTimestamp - 86400)->once()
+            ->mock();
 
         $this->cache
-        ->shouldReceive('has')->with('template/image.png')->andReturn(true)->once()
-        ->shouldReceive('get')->with('template/image.png')->andReturn($image)->once();
+            ->shouldReceive('has')->with('template/image.png')->andReturn(true)->once()
+            ->shouldReceive('get')->with('template/image.png')->andReturn($image)->once();
 
         /*
          * Run the server
