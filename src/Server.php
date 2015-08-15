@@ -250,6 +250,9 @@ class Server
 
             // Respond with 304 not modified
             if ($this->response->isNotModified($this->request)) {
+                $this->response->setCallback(function () {
+                    // empty response body
+                });
                 return true;
             }
 
