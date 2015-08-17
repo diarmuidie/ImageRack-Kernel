@@ -47,7 +47,7 @@ class Process
 
         // Encode the image if it hasn't
         // been encoded in the template.
-        if (empty($image->encoded)) {
+        if (!$image->isEncoded()) {
             $image->encode();
         }
 

@@ -311,7 +311,9 @@ class ServerTest extends \PHPUnit_Framework_TestCase
             ->mock();
 
         $imageContent = str_repeat('.', 1234);
-        $image = Mockery::mock('\Intervention\Image\Image');
+        $image = Mockery::mock('\Intervention\Image\Image')
+            ->shouldReceive('isEncoded')->andReturn(true)->once()
+            ->mock();
         $image->mime = 'image/png';
         $image->encoded = $imageContent;
 
@@ -369,7 +371,9 @@ class ServerTest extends \PHPUnit_Framework_TestCase
             ->mock();
 
         $imageContent = str_repeat('.', 1234);
-        $image = Mockery::mock('\Intervention\Image\Image');
+        $image = Mockery::mock('\Intervention\Image\Image')
+            ->shouldReceive('isEncoded')->andReturn(true)->once()
+            ->mock();
         $image->mime = 'image/png';
         $image->encoded = $imageContent;
 
