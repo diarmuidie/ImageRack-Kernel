@@ -233,12 +233,6 @@ class Server
         if ($this->cache->has($path)) {
             $file = $this->cache->get($path);
 
-            $this->response = new StreamedResponse();
-
-            // Set the headers
-            $this->response->headers->set('Content-Type', $file->getMimetype());
-            $this->response->headers->set('Content-Length', $file->getSize());
-
             $lastModified = new \DateTime();
             $lastModified->setTimestamp($file->getTimestamp());
 
@@ -250,11 +244,20 @@ class Server
 
             // Respond with 304 not modified
             if ($this->response->isNotModified($this->request)) {
-                $this->response->setCallback(function () {
-                    // empty response body
-                });
                 return true;
             }
+
+            $this->response = new StreamedResponse();
+
+            // Set the headers
+            $this->response->headers->set('Content-Type', $file->getMimetype());
+            $this->response->headers->set('Content-Length', $file->getSize());
+
+            $this->setHttpCacheHeaders(
+                $lastModified,
+                md5($this->getCachePath() . $lastModified->getTimestamp()),
+                $this->maxAge
+            );
 
             $this->response->setCallback(function () use ($file) {
                 fpassthru($file->readStream());

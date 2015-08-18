@@ -490,8 +490,6 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
 
         $image = Mockery::mock('\Intervention\Image\Image')
-            ->shouldReceive('getMimetype')->andReturn('image/png')->once()
-            ->shouldReceive('getSize')->andReturn(1234)->once()
             ->shouldReceive('getTimestamp')->andReturn($modifiedTimestamp - 86400)->once()
             ->mock();
 
