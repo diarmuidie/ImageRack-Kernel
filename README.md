@@ -9,6 +9,7 @@ Developed by [Diarmuid](https://diarmuid.ie).
 [![Coverage Status](https://coveralls.io/repos/diarmuidie/ImageRack-Kernel/badge.svg?branch=master)](https://coveralls.io/r/diarmuidie/ImageRack-Kernel?branch=master)
 [![SensioLabsInsight](https://insight.sensiolabs.com/projects/36f9f8f8-3c75-4942-a106-c98bee268ad5/mini.png)](https://insight.sensiolabs.com/projects/36f9f8f8-3c75-4942-a106-c98bee268ad5)
 
+
 Usage
 -----
 
