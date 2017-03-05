@@ -2,13 +2,12 @@
 
 namespace Diarmuidie\ImageRack;
 
-use \Mockery as Mockery;
-use \Symfony\Component\HttpFoundation\Request;
-use \Symfony\Component\HttpFoundation\Response;
+use Mockery as Mockery;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class ServerTest extends \PHPUnit_Framework_TestCase
 {
-
     protected $source;
     protected $cache;
     protected $imageManager;
@@ -26,15 +25,14 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Diarmuidie\ImageRack\Server::setTemplate
-     * @covers Diarmuidie\ImageRack\Server::getTemplates
+     * @covers \Diarmuidie\ImageRack\Server::setTemplate
+     * @covers \Diarmuidie\ImageRack\Server::getTemplates
      */
     public function testTemplatesSet()
     {
         $server = new Server($this->source, $this->cache, $this->imageManager);
 
         $callable = function () {
-            //
         };
 
         $server->setTemplate('template1', $callable);
@@ -51,7 +49,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Diarmuidie\ImageRack\Server::notFound
+     * @covers \Diarmuidie\ImageRack\Server::notFound
      */
     public function testDefaultNotFound()
     {
@@ -65,8 +63,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Diarmuidie\ImageRack\Server::setNotFound
-     * @covers Diarmuidie\ImageRack\Server::notFound
+     * @covers \Diarmuidie\ImageRack\Server::setNotFound
+     * @covers \Diarmuidie\ImageRack\Server::notFound
      */
     public function testCallableNotFound()
     {
@@ -84,7 +82,6 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(404, $response->getStatusCode());
     }
 
-
     public function testDefaultError()
     {
         $server = new Server($this->source, $this->cache, $this->imageManager);
@@ -93,7 +90,6 @@ class ServerTest extends \PHPUnit_Framework_TestCase
 
         $server->error(new \Exception('Test Exception'));
     }
-
 
     public function testCallableError()
     {
@@ -132,7 +128,6 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         error_reporting($errorReporting);
     }
 
-
     public function testErrorHandlerDoesntThrowExceptionWhenReportingOff()
     {
         $errno = 2;
@@ -154,9 +149,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         error_reporting($errorReporting);
     }
 
-
     /**
-     * @covers Diarmuidie\ImageRack\Server::send
+     * @covers \Diarmuidie\ImageRack\Server::send
      */
     public function testSendSendsResponse()
     {
@@ -169,8 +163,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Diarmuidie\ImageRack\Server::run
-     * @covers Diarmuidie\ImageRack\Server::validRequest
+     * @covers \Diarmuidie\ImageRack\Server::run
+     * @covers \Diarmuidie\ImageRack\Server::validRequest
      */
     public function testSendNotFoundForURLWithoutTemplate()
     {
@@ -196,8 +190,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Diarmuidie\ImageRack\Server::run
-     * @covers Diarmuidie\ImageRack\Server::validRequest
+     * @covers \Diarmuidie\ImageRack\Server::run
+     * @covers \Diarmuidie\ImageRack\Server::validRequest
      */
     public function testSendNotFoundForURLWithInvalidTemplate()
     {
@@ -221,9 +215,9 @@ class ServerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Diarmuidie\ImageRack\Server::run
-     * @covers Diarmuidie\ImageRack\Server::serveFromCache
-     * @covers Diarmuidie\ImageRack\Server::serveFromSource
+     * @covers \Diarmuidie\ImageRack\Server::run
+     * @covers \Diarmuidie\ImageRack\Server::serveFromCache
+     * @covers \Diarmuidie\ImageRack\Server::serveFromSource
      */
     public function testSendNotFoundForValidURL()
     {
@@ -296,9 +290,8 @@ class ServerTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1234, $response->headers->get('content-length'));
         $this->assertEquals($actualModified, $response->getLastModified());
         $this->assertEquals(2678400, $response->getMaxAge());
-        $this->assertEquals('"' . md5('template/image.png' . $modifiedTimestamp) . '"', $response->getEtag());
+        $this->assertEquals('"'.md5('template/image.png'.$modifiedTimestamp).'"', $response->getEtag());
         $this->assertTrue($response->headers->hasCacheControlDirective('public'));
-
     }
 
     public function testSendImageFromSource()
@@ -307,7 +300,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          * Setup the mock objects
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
-            ->shouldReceive('getPathInfo')->andReturn('template/image.png') ->once()
+            ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
             ->mock();
 
         $imageContent = str_repeat('.', 1234);
@@ -487,7 +480,6 @@ class ServerTest extends \PHPUnit_Framework_TestCase
             ->with('If-Modified-Since')
             ->andReturn(date('D, d M Y H:i:s T', $modifiedTimestamp))
             ->mock();
-
 
         $image = Mockery::mock('\Intervention\Image\Image')
             ->shouldReceive('getTimestamp')->andReturn($modifiedTimestamp - 86400)->once()

@@ -2,11 +2,10 @@
 
 namespace Diarmuidie\ImageRack\Image;
 
-use \Mockery as Mockery;
+use Mockery as Mockery;
 
 class ProcessTest extends \PHPUnit_Framework_TestCase
 {
-
     public function tearDown()
     {
         Mockery::close();

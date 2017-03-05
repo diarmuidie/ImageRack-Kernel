@@ -2,28 +2,29 @@
 
 namespace Diarmuidie\ImageRack\Image;
 
-use \Diarmuidie\ImageRack\Image\TemplateInterface;
-use \Intervention\Image\ImageManager;
+use Intervention\Image\ImageManager;
 
 /**
- * Object to process an image
+ * Object to process an image.
  */
 class Process
 {
     /**
-     * The image
+     * The image.
+     *
      * @var resource
      */
     private $image;
 
     /**
-     * The image manager
+     * The image manager.
+     *
      * @var Intervention\Image\ImageManager
      */
     private $imageManager;
 
     /**
-     * Set the streamable image resource on startup
+     * Set the streamable image resource on startup.
      *
      * @param resource $image The image resource
      */
@@ -34,9 +35,11 @@ class Process
     }
 
     /**
-     * Run the named template against the image
-     * @param  String $template          The template to run
-     * @return Intervention\Image\Image  The processed image
+     * Run the named template against the image.
+     *
+     * @param string $template The template to run
+     *
+     * @return Intervention\Image\Image The processed image
      */
     public function process(TemplateInterface $template)
     {

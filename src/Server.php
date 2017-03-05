@@ -2,21 +2,17 @@
 
 namespace Diarmuidie\ImageRack;
 
-use \League\Flysystem\File;
-use \League\Flysystem\FilesystemInterface;
-use \Intervention\Image\ImageManager;
-use \Intervention\Image\Image;
-use \Diarmuidie\ImageRack\Image\TemplateInterface;
-use \Symfony\Component\HttpFoundation\Request;
-use \Symfony\Component\HttpFoundation\Response;
-use \Symfony\Component\HttpFoundation\StreamedResponse;
+use League\Flysystem\File;
+use League\Flysystem\FilesystemInterface;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Image;
+use Diarmuidie\ImageRack\Image\TemplateInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/**
- *
- */
 class Server
 {
-
     /**
      * @var FilesystemInterface
      */
@@ -43,53 +39,57 @@ class Server
     private $response;
 
     /**
-     * @var Callable
+     * @var callable
      */
     private $notFound;
 
     /**
-     * @var Callable
+     * @var callable
      */
     private $error;
 
     /**
-     * Callback to save a process image to the cache
-     * @var Callable
+     * Callback to save a process image to the cache.
+     *
+     * @var callable
      */
     private $cacheWrite;
 
     /**
-     * Array of valid templates [name => callable]
-     * @var Array
+     * Array of valid templates [name => callable].
+     *
+     * @var array
      */
     private $templates = array();
 
     /**
-     * Current request template
-     * @var String
+     * Current request template.
+     *
+     * @var string
      */
     private $template;
 
     /**
-     * Current request path
-     * @var String
+     * Current request path.
+     *
+     * @var string
      */
     private $path;
 
     /**
-     * The http cache max age header value in seconds (one month)
-     * @var Integer
+     * The http cache max age header value in seconds (one month).
+     *
+     * @var int
      */
     private $maxAge = 2678400;
 
     /**
-     * Bootstrap the server dependencies
+     * Bootstrap the server dependencies.
      *
      * @param FilesystemInterface $source       The source image location
      * @param FilesystemInterface $cache        The cache image location
      * @param ImageManager        $imageManager The image manipulatpion object
      * @param Request             $request      Optional overwride request object
-     * @return Void
      */
     public function __construct(
         FilesystemInterface $source,
@@ -116,22 +116,20 @@ class Server
     }
 
     /**
-     *  Set an allowed template and callable to return a TemplateInterface
+     *  Set an allowed template and callable to return a TemplateInterface.
      *
-     * @param String   $name             The name of the template
-     * @param Callable $templateCallback The template callback
-     * @return Void
+     * @param string   $name             The name of the template
+     * @param callable $templateCallback The template callback
      */
     public function setTemplate($name, callable $templateCallback)
     {
         $this->templates[$name] = $templateCallback;
     }
 
-
     /**
-     * Get an array of templates
+     * Get an array of templates.
      *
-     * @return Array The array of set templates
+     * @return array The array of set templates
      */
     public function getTemplates()
     {
@@ -139,17 +137,17 @@ class Server
     }
 
     /**
-     * Set the Cache header max age. Set to zero to disable
+     * Set the Cache header max age. Set to zero to disable.
      *
-     * @param  Integer                  $maxAge Amount of seconds to cache the image
-     * @return Void
+     * @param int $maxAge Amount of seconds to cache the image
+     *
      * @throws InvalidArgumentException
      */
     public function setHttpCacheMaxAge($maxAge)
     {
         if (!is_int(($maxAge))) {
             throw new \InvalidArgumentException(
-                'setHttpCacheMaxAge method only accepts integers. Input was: ' . $maxAge
+                'setHttpCacheMaxAge method only accepts integers. Input was: '.$maxAge
             );
         }
         $this->maxAge = $maxAge;
@@ -158,7 +156,7 @@ class Server
     /**
      * Get the the Cache header max age.
      *
-     * @return Integer Cache age in seconds.
+     * @return int cache age in seconds
      */
     public function getHttpCacheMaxAge()
     {
@@ -166,7 +164,7 @@ class Server
     }
 
     /**
-     * Run the image Server on the curent request
+     * Run the image Server on the curent request.
      *
      * @return Response The response object
      */
@@ -181,6 +179,7 @@ class Server
         // Send a not found response if the request is not valid
         if (!$this->validRequest()) {
             $this->notFound();
+
             return $this->response;
         }
 
@@ -198,19 +197,20 @@ class Server
 
         // Finally default to returning a not found response
         $this->notFound();
+
         return $this->response;
     }
 
     /**
-     * Convert errors into ErrorException objects
+     * Convert errors into ErrorException objects.
      *
      * This method catches PHP errors and converts them into \ErrorException objects.
      *
-     * @param  Integer        $errno   The numeric type of the Error
-     * @param  string         $errstr  The error message
-     * @param  String         $errfile The absolute path to the affected file
-     * @param  Int            $errline The line number of the error in the affected file
-     * @return Void
+     * @param int    $errno   The numeric type of the Error
+     * @param string $errstr  The error message
+     * @param string $errfile The absolute path to the affected file
+     * @param int    $errline The line number of the error in the affected file
+     *
      * @throws ErrorException
      */
     public static function handleErrors($errno, $errstr = '', $errfile = '', $errline = '')
@@ -222,10 +222,11 @@ class Server
     }
 
     /**
-     * Generate a response object for a cached image
+     * Generate a response object for a cached image.
      *
-     * @param  String  $path Path to the cached image
-     * @return Boolean
+     * @param string $path Path to the cached image
+     *
+     * @return bool
      */
     private function serveFromCache($path)
     {
@@ -238,7 +239,7 @@ class Server
 
             $this->setHttpCacheHeaders(
                 $lastModified,
-                md5($this->getCachePath() . $lastModified->getTimestamp()),
+                md5($this->getCachePath().$lastModified->getTimestamp()),
                 $this->maxAge
             );
 
@@ -255,7 +256,7 @@ class Server
 
             $this->setHttpCacheHeaders(
                 $lastModified,
-                md5($this->getCachePath() . $lastModified->getTimestamp()),
+                md5($this->getCachePath().$lastModified->getTimestamp()),
                 $this->maxAge
             );
 
@@ -265,14 +266,16 @@ class Server
 
             return true;
         }
+
         return false;
     }
 
     /**
-     * Process a source image and Generate a response object
+     * Process a source image and Generate a response object.
      *
-     * @param  String  $path Path to the source image
-     * @return Boolean
+     * @param string $path Path to the source image
+     *
+     * @return bool
      */
     private function serveFromSource($path)
     {
@@ -298,7 +301,7 @@ class Server
 
             $this->setHttpCacheHeaders(
                 $lastModified,
-                md5($this->getCachePath() . $lastModified->getTimestamp()),
+                md5($this->getCachePath().$lastModified->getTimestamp()),
                 $this->maxAge
             );
 
@@ -314,16 +317,16 @@ class Server
 
             return true;
         }
+
         return false;
     }
 
     /**
-     * Set the appripriate HTTP cache headers
+     * Set the appripriate HTTP cache headers.
      *
-     * @param \DateTime $lastModified The last time the resource was modified.
-     * @param String    $eTag         Unique eTag for the resource.
-     * @param Integer   $maxAge       The max age (in seconds).
-     * @return Void
+     * @param \DateTime $lastModified the last time the resource was modified
+     * @param string    $eTag         unique eTag for the resource
+     * @param int       $maxAge       the max age (in seconds)
      */
     private function setHttpCacheHeaders(\DateTime $lastModified, $eTag, $maxAge)
     {
@@ -332,6 +335,7 @@ class Server
 
         if ($this->maxAge === 0) {
             $this->response->headers->set('Cache-Control', 'no-cache');
+
             return;
         }
 
@@ -340,10 +344,9 @@ class Server
     }
 
     /**
-     * Set a user defined not found callback
+     * Set a user defined not found callback.
      *
-     * @param  Callable $callable The user defined notFound callback
-     * @return Void
+     * @param callable $callable The user defined notFound callback
      */
     public function setNotFound(callable $callable)
     {
@@ -351,9 +354,7 @@ class Server
     }
 
     /**
-     * Set a not found response
-     *
-     * @return Void
+     * Set a not found response.
      */
     protected function notFound()
     {
@@ -369,10 +370,9 @@ class Server
     }
 
     /**
-     * Set a user defined error callback
+     * Set a user defined error callback.
      *
-     * @param  Callable $callable The user defined error callback
-     * @return Void
+     * @param callable $callable The user defined error callback
      */
     public function setError(callable $callable)
     {
@@ -380,10 +380,9 @@ class Server
     }
 
     /**
-     * Set an error response
+     * Set an error response.
      *
-     * @param  Exceptions $exception The caught exception
-     * @return Void
+     * @param Exceptions $exception The caught exception
      */
     public function error($exception)
     {
@@ -404,10 +403,9 @@ class Server
     }
 
     /**
-     * Send the response to the browser
+     * Send the response to the browser.
      *
-     * @param  Response $response Optional overwrite response
-     * @return Void
+     * @param Response $response Optional overwrite response
      */
     public function send(Response $response = null)
     {
@@ -428,12 +426,13 @@ class Server
     }
 
     /**
-     * Process an image using the provided template
+     * Process an image using the provided template.
      *
-     * @param  File              $file         The file handler for the image
-     * @param  ImageManager      $imageManager The image manipulation manager
-     * @param  TemplateInterface $template     The template
-     * @return Image                           The processed image
+     * @param File              $file         The file handler for the image
+     * @param ImageManager      $imageManager The image manipulation manager
+     * @param TemplateInterface $template     The template
+     *
+     * @return Image The processed image
      */
     private function processImage(File $file, ImageManager $imageManager, TemplateInterface $template)
     {
@@ -448,19 +447,19 @@ class Server
     }
 
     /**
-     * Get the path for the cached file
+     * Get the path for the cached file.
      *
-     * @return String
+     * @return string
      */
     private function getCachePath()
     {
-        return $this->template . '/' . $this->path;
+        return $this->template.'/'.$this->path;
     }
 
     /**
-     * Get the path for the source file
+     * Get the path for the source file.
      *
-     * @return String
+     * @return string
      */
     private function getSourcePath()
     {
@@ -468,16 +467,17 @@ class Server
     }
 
     /**
-     * Parse the request path to extract the path and template elements
+     * Parse the request path to extract the path and template elements.
      *
-     * @param  String $path The complet server path
-     * @return Array        Array of 'template' and 'path' portions of the URL
+     * @param string $path The complet server path
+     *
+     * @return array Array of 'template' and 'path' portions of the URL
      */
     private function parsePath($path)
     {
         $parts = array(
             'template' => null,
-            'path' => null
+            'path' => null,
         );
 
         // strip out any query params
@@ -490,9 +490,9 @@ class Server
     }
 
     /**
-     * Test if the request is valid
+     * Test if the request is valid.
      *
-     * @return Boolean
+     * @return bool
      */
     private function validRequest()
     {
@@ -505,6 +505,7 @@ class Server
         if (!array_key_exists($this->template, $this->templates)) {
             return false;
         }
+
         return true;
     }
 }

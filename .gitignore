@@ -4,3 +4,5 @@ vendor/
 
 ### Build folder
 build/
+
+.php_cs.cache
