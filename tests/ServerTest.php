@@ -262,7 +262,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
             ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
-            ->shouldReceive('isMethodSafe')->andReturn(false)->once()
+            ->shouldReceive('isMethodCacheable')->andReturn(false)->once()
             ->mock();
 
         $modifiedTimestamp = time();
@@ -437,7 +437,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          */
          $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
              ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
-             ->shouldReceive('isMethodSafe')->andReturn(false)->twice()
+             ->shouldReceive('isMethodCacheable')->andReturn(false)->twice()
              ->mock();
 
         $image = Mockery::mock('\Intervention\Image\Image')
@@ -478,7 +478,7 @@ class ServerTest extends \PHPUnit_Framework_TestCase
          */
         $request = Mockery::mock('\Symfony\Component\HttpFoundation\Request')
             ->shouldReceive('getPathInfo')->andReturn('template/image.png')->once()
-            ->shouldReceive('isMethodSafe')->andReturn(true)->once()
+            ->shouldReceive('isMethodCacheable')->andReturn(true)->once()
             ->shouldReceive('getETags')->andReturn([])->once()
             ->mock();
 
